@@ -1,8 +1,8 @@
 {
   "name": "freestickerdesigns-org",
   "version": "1.0.0",
-  "description": "FreeStickerDesigns.org — free sticker designs for everyone",
+  "description": "FreeStickerDesigns.org",
   "dependencies": {
-    "@neondatabase/serverless": "^0.9.0"
+    "pg": "^8.11.0"
   }
 }

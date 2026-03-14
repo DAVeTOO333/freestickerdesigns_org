@@ -1,10 +1,9 @@
-const { neon } = require('@neondatabase/serverless');
-
-const sql = neon(process.env.DATABASE_URL);
+const { Client } = require('pg');
 
 exports.handler = async (event) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
     'Content-Type': 'application/json',
   };
 
@@ -16,55 +15,40 @@ exports.handler = async (event) => {
     return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
   }
 
+  const client = new Client({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+
   try {
     const body = JSON.parse(event.body);
     const { title, artist_name, artist_url, description, tags, file_url, thumbnail_url } = body;
 
     if (!title || !artist_name || !file_url || !thumbnail_url) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'Missing required fields' }),
-      };
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing required fields' }) };
     }
 
-    // Basic URL validation
-    try {
-      new URL(file_url);
-      new URL(thumbnail_url);
-    } catch {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'Invalid file or thumbnail URL' }),
-      };
+    try { new URL(file_url); new URL(thumbnail_url); } catch {
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid file or thumbnail URL' }) };
     }
 
-    await sql`
-      INSERT INTO stickers (title, artist_name, artist_url, description, tags, download_url, thumbnail_url, status)
-      VALUES (
-        ${title.substring(0, 200)},
-        ${artist_name.substring(0, 100)},
-        ${artist_url || null},
-        ${description ? description.substring(0, 1000) : null},
-        ${tags || []},
-        ${file_url},
-        ${thumbnail_url},
-        'pending'
-      )
-    `;
+    await client.connect();
+    await client.query(
+      `INSERT INTO stickers (title, artist_name, artist_url, description, tags, download_url, thumbnail_url, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending')`,
+      [
+        title.substring(0, 200),
+        artist_name.substring(0, 100),
+        artist_url || null,
+        description ? description.substring(0, 1000) : null,
+        tags || [],
+        file_url,
+        thumbnail_url
+      ]
+    );
 
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({ success: true }),
-    };
+    return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
   } catch (err) {
-    console.error(err);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: 'Submission failed. Please try again.' }),
-    };
+    console.error('Submit error:', err);
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'Submission failed. Please try again.' }) };
+  } finally {
+    await client.end().catch(() => {});
   }
 };
