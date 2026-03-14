@@ -9,6 +9,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/sticker"
+  to = "/.netlify/functions/sticker"
+  status = 200
+
+[[redirects]]
   from = "/api/submit"
   to = "/.netlify/functions/submit"
   status = 200
