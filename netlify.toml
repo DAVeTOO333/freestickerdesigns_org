@@ -1,6 +1,7 @@
 [build]
   publish = "."
   functions = "netlify/functions"
+  command = "npm install"
 
 [[redirects]]
   from = "/api/stickers"
@@ -19,3 +20,4 @@
 
 [functions]
   node_bundler = "esbuild"
+  included_files = ["node_modules/@neondatabase/**"]
