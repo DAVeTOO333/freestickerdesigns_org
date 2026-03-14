@@ -6,14 +6,12 @@ exports.handler = async (event) => {
     'Content-Type': 'application/json',
   };
 
-  if (!process.env.DATABASE_URL) {
-    return { statusCode: 500, headers, body: JSON.stringify({ error: 'DATABASE_URL not set' }) };
+  const dbUrl = process.env.NETLIFY_DATABASE_URL || process.env.DATABASE_URL;
+  if (!dbUrl) {
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'No database URL found' }) };
   }
 
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
-  });
+  const client = new Client({ connectionString: dbUrl, ssl: { rejectUnauthorized: false } });
 
   try {
     const params = event.queryStringParameters || {};

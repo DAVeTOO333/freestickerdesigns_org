@@ -15,14 +15,12 @@ exports.handler = async (event) => {
     return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
   }
 
-  if (!process.env.DATABASE_URL) {
-    return { statusCode: 500, headers, body: JSON.stringify({ error: 'DATABASE_URL not set' }) };
+  const dbUrl = process.env.NETLIFY_DATABASE_URL || process.env.DATABASE_URL;
+  if (!dbUrl) {
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'No database URL found' }) };
   }
 
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
-  });
+  const client = new Client({ connectionString: dbUrl, ssl: { rejectUnauthorized: false } });
 
   try {
     const body = JSON.parse(event.body);
