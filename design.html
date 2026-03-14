@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Design — FreeStickerDesigns.org</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .design-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      align-items: start;
+      margin-top: 2rem;
+    }
+    @media (max-width: 700px) {
+      .design-layout { grid-template-columns: 1fr; }
+    }
+    .design-preview {
+      background: #eee;
+      border: var(--border-thick);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .design-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      padding: 1.5rem;
+    }
+    .design-info {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .design-title {
+      font-family: 'Bangers', cursive;
+      font-size: 2.5rem;
+      letter-spacing: 2px;
+      line-height: 1.1;
+    }
+    .design-artist {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #555;
+    }
+    .design-artist a {
+      color: var(--blue);
+    }
+    .design-description {
+      font-size: 1rem;
+      line-height: 1.7;
+      color: #333;
+      font-weight: 600;
+    }
+    .design-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a class="logo" href="index.html">FREE<span>STICKER</span>DESIGNS</a>
+    <nav>
+      <a href="browse.html">Browse</a>
+      <a href="artists.html">Artists</a>
+      <a href="print.html">Print</a>
+      <a href="submit.html">Submit Yours</a>
+      <a href="about.html">About</a>
+    </nav>
+  </header>
+
+  <div class="section">
+    <a href="browse.html" style="font-weight:800; color: var(--blue); text-decoration:none;">← Back to Browse</a>
+
+    <div id="design-content">
+      <div class="empty-state">
+        <div class="big-emoji">⏳</div>
+        <p>Loading design...</p>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>© 2026 FreeStickerDesigns.org — Free to download, free to print, free to share.</p>
+    <p style="margin-top:0.5rem; opacity:0.6;">No hate. No catch. Just stickers.</p>
+  </footer>
+
+  <script>
+    async function loadDesign() {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('id');
+
+      if (!id) {
+        document.getElementById('design-content').innerHTML = `
+          <div class="empty-state">
+            <div class="big-emoji">🤔</div>
+            <p>No design specified. <a href="browse.html">Browse all designs →</a></p>
+          </div>`;
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/sticker?id=' + encodeURIComponent(id));
+        if (!res.ok) throw new Error('Not found');
+        const s = await res.json();
+
+        document.title = s.title + ' — FreeStickerDesigns.org';
+
+        document.getElementById('design-content').innerHTML = `
+          <div class="design-layout">
+            <div class="design-preview">
+              <img src="${s.thumbnail_url}" alt="${s.title}" />
+            </div>
+            <div class="design-info">
+              <div class="design-title">${s.title}</div>
+              <div class="design-artist">by ${s.artist_url
+                ? `<a href="${s.artist_url}" target="_blank" rel="noopener">${s.artist_name}</a>`
+                : s.artist_name
+              }</div>
+              ${s.description ? `<div class="design-description">${s.description}</div>` : ''}
+              <div class="design-tags">
+                ${(s.tags || []).map(t => `<span class="tag">${t}</span>`).join('')}
+              </div>
+              <a href="${s.download_url}" class="btn btn-yellow" download style="margin-top:1rem;">⬇ Download Sticker</a>
+              <p style="font-size:0.85rem; font-weight:600; color:#777; margin-top:0.5rem;">
+                Print-ready file. <a href="print.html" style="color:var(--blue);">Printing tips →</a>
+              </p>
+            </div>
+          </div>`;
+      } catch (e) {
+        document.getElementById('design-content').innerHTML = `
+          <div class="empty-state">
+            <div class="big-emoji">😬</div>
+            <p>Design not found. <a href="browse.html">Browse all designs →</a></p>
+          </div>`;
+      }
+    }
+
+    loadDesign();
+  </script>
+
+</body>
+</html>
