@@ -1,4 +1,30 @@
 const { Client } = require('pg');
+const { getStore } = require('@netlify/blobs');
+const Busboy = require('busboy');
+const { randomUUID } = require('crypto');
+
+function parseMultipart(event) {
+  return new Promise((resolve, reject) => {
+    const fields = {};
+    const files = {};
+    const bb = Busboy({
+      headers: { 'content-type': event.headers['content-type'] }
+    });
+    bb.on('field', (name, val) => { fields[name] = val; });
+    bb.on('file', (name, stream, info) => {
+      const chunks = [];
+      stream.on('data', d => chunks.push(d));
+      stream.on('end', () => {
+        files[name] = { buffer: Buffer.concat(chunks), mimetype: info.mimeType, filename: info.filename };
+      });
+    });
+    bb.on('close', () => resolve({ fields, files }));
+    bb.on('error', reject);
+    const body = Buffer.from(event.body, event.isBase64Encoded ? 'base64' : 'utf8');
+    bb.write(body);
+    bb.end();
+  });
+}
 
 exports.handler = async (event) => {
   const headers = {
@@ -7,33 +33,35 @@ exports.handler = async (event) => {
     'Content-Type': 'application/json',
   };
 
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers, body: '' };
-  }
-
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
-  }
+  if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
+  if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
 
   const dbUrl = process.env.NETLIFY_DATABASE_URL || process.env.DATABASE_URL;
-  if (!dbUrl) {
-    return { statusCode: 500, headers, body: JSON.stringify({ error: 'No database URL found' }) };
-  }
-
-  const client = new Client({ connectionString: dbUrl, ssl: { rejectUnauthorized: false } });
+  if (!dbUrl) return { statusCode: 500, headers, body: JSON.stringify({ error: 'No database URL found' }) };
 
   try {
-    const body = JSON.parse(event.body);
-    const { title, artist_name, artist_url, description, tags, file_url, thumbnail_url } = body;
+    const { fields, files } = await parseMultipart(event);
+    const { title, artist_name, artist_url, description, tags_raw } = fields;
 
-    if (!title || !artist_name || !file_url || !thumbnail_url) {
+    if (!title || !artist_name) {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing required fields' }) };
     }
-
-    try { new URL(file_url); new URL(thumbnail_url); } catch {
-      return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid file or thumbnail URL' }) };
+    if (!files.print_file || !files.thumbnail) {
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'Both a print file and thumbnail are required' }) };
     }
 
+    const store = getStore('sticker-files');
+    const printKey = `print/${randomUUID()}`;
+    const thumbKey = `thumb/${randomUUID()}`;
+
+    await store.set(printKey, files.print_file.buffer, { metadata: { mimetype: files.print_file.mimetype, filename: files.print_file.filename } });
+    await store.set(thumbKey, files.thumbnail.buffer, { metadata: { mimetype: files.thumbnail.mimetype } });
+
+    const tags = (tags_raw || '').split(',').map(t => t.trim()).filter(Boolean);
+    const download_url = `/api/file?key=${encodeURIComponent(printKey)}`;
+    const thumbnail_url = `/api/file?key=${encodeURIComponent(thumbKey)}`;
+
+    const client = new Client({ connectionString: dbUrl, ssl: { rejectUnauthorized: false } });
     await client.connect();
     await client.query(
       `INSERT INTO stickers (title, artist_name, artist_url, description, tags, download_url, thumbnail_url, status)
@@ -43,17 +71,16 @@ exports.handler = async (event) => {
         artist_name.substring(0, 100),
         artist_url || null,
         description ? description.substring(0, 1000) : null,
-        tags || [],
-        file_url,
+        tags,
+        download_url,
         thumbnail_url
       ]
     );
+    await client.end();
 
     return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
   } catch (err) {
     console.error('Submit error:', err.message);
     return { statusCode: 500, headers, body: JSON.stringify({ error: err.message }) };
-  } finally {
-    await client.end().catch(() => {});
   }
 };

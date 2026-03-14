@@ -5,6 +5,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Submit a Design — FreeStickerDesigns.org</title>
   <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .file-upload-area {
+      border: 3px dashed var(--black);
+      border-radius: var(--radius);
+      padding: 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: background 0.15s;
+      background: #fafafa;
+      position: relative;
+    }
+    .file-upload-area:hover { background: #fff9d6; }
+    .file-upload-area input[type=file] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+      box-shadow: none;
+    }
+    .file-upload-area .upload-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+    .file-upload-area .upload-label { font-weight: 800; font-size: 0.95rem; }
+    .file-upload-area .upload-hint { font-size: 0.8rem; color: #777; margin-top: 0.25rem; }
+    .file-preview { margin-top: 0.75rem; }
+    .file-preview img { max-height: 120px; border: 2px solid var(--black); border-radius: 8px; }
+    .file-name { font-size: 0.85rem; font-weight: 700; color: #333; margin-top: 0.5rem; }
+    .progress-bar-wrap { display: none; background: #eee; border: 2px solid var(--black); border-radius: 8px; overflow: hidden; margin-top: 1rem; }
+    .progress-bar { height: 12px; background: var(--yellow); width: 0%; transition: width 0.3s; }
+  </style>
 </head>
 <body>
 
@@ -21,7 +46,7 @@
 
   <div class="section">
     <div class="section-title">Submit a Design</div>
-    <p class="section-subtitle">Got something good? Share it with the world for free.</p>
+    <p class="section-subtitle">Got something good? Upload it and share it with the world.</p>
 
     <div class="form-card">
       <div id="form-status"></div>
@@ -48,24 +73,38 @@
         </div>
 
         <div class="form-group">
-          <label for="tags">Tags *</label>
-          <input type="text" id="tags" name="tags" required placeholder="humor, pop culture, animals..." />
+          <label for="tags_raw">Tags *</label>
+          <input type="text" id="tags_raw" name="tags_raw" required placeholder="humor, pop culture, animals..." />
           <div class="form-note">Comma-separated. Helps people find your work.</div>
         </div>
 
         <div class="form-group">
-          <label for="file_url">File Link *</label>
-          <input type="url" id="file_url" name="file_url" required placeholder="Link to your PDF or PNG (Google Drive, Dropbox, etc.)" />
-          <div class="form-note">Share a public link to a print-ready PDF or high-res PNG. Files should be at least 300 DPI.</div>
+          <label>Print File * <span style="font-weight:400;font-size:0.85rem;">(PDF or PNG, 300 DPI+)</span></label>
+          <div class="file-upload-area" id="print-drop">
+            <input type="file" id="print_file" name="print_file" accept=".pdf,.png,.jpg,.jpeg" required />
+            <div class="upload-icon">📄</div>
+            <div class="upload-label">Click to upload print file</div>
+            <div class="upload-hint">PDF or high-res PNG/JPG — 300 DPI minimum</div>
+            <div class="file-name" id="print-name"></div>
+          </div>
         </div>
 
         <div class="form-group">
-          <label for="thumbnail_url">Thumbnail/Preview Link *</label>
-          <input type="url" id="thumbnail_url" name="thumbnail_url" required placeholder="Link to a preview image (PNG or JPG)" />
-          <div class="form-note">A square preview image works best. Minimum 400×400px.</div>
+          <label>Thumbnail Preview * <span style="font-weight:400;font-size:0.85rem;">(PNG or JPG, square preferred)</span></label>
+          <div class="file-upload-area" id="thumb-drop">
+            <input type="file" id="thumbnail" name="thumbnail" accept=".png,.jpg,.jpeg,.gif,.webp" required />
+            <div class="upload-icon">🖼️</div>
+            <div class="upload-label">Click to upload preview image</div>
+            <div class="upload-hint">Square image works best — min 400×400px</div>
+            <div class="file-preview" id="thumb-preview"></div>
+          </div>
         </div>
 
-        <div class="form-group">
+        <div class="progress-bar-wrap" id="progress-wrap">
+          <div class="progress-bar" id="progress-bar"></div>
+        </div>
+
+        <div class="form-group" style="margin-top:1.5rem;">
           <label style="display:flex; gap:0.75rem; align-items:flex-start; cursor:pointer;">
             <input type="checkbox" id="agree" name="agree" required style="margin-top:3px; width:auto; box-shadow:none;" />
             <span>I confirm this is my original work (or I have permission to share it), and I'm okay with it being available for free download. No hateful content. ✌️</span>
@@ -79,8 +118,8 @@
     </div>
 
     <div style="max-width:600px; margin: 2rem auto 0; font-size:0.9rem; color:#555; font-weight:600;">
-      <strong>Guidelines:</strong> Keep it cool. No hate speech, no harassment, no content that promotes violence. 
-      Designs go live after a quick review. Questions? Reach us at <a href="mailto:hello@freestickerdesigns.org">hello@freestickerdesigns.org</a>.
+      <strong>Guidelines:</strong> Keep it cool. No hate speech, no harassment, no content that promotes violence.
+      Designs go live after a quick review. Questions? <a href="mailto:hello@freestickerdesigns.org">hello@freestickerdesigns.org</a>
     </div>
   </div>
 
@@ -90,41 +129,69 @@
   </footer>
 
   <script>
+    // Show filename when print file selected
+    document.getElementById('print_file').addEventListener('change', function() {
+      document.getElementById('print-name').textContent = this.files[0] ? this.files[0].name : '';
+    });
+
+    // Show thumbnail preview
+    document.getElementById('thumbnail').addEventListener('change', function() {
+      const preview = document.getElementById('thumb-preview');
+      if (this.files[0]) {
+        const url = URL.createObjectURL(this.files[0]);
+        preview.innerHTML = `<img src="${url}" alt="Preview" />`;
+      }
+    });
+
     document.getElementById('submit-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const status = document.getElementById('form-status');
       const btn = e.target.querySelector('button[type="submit"]');
-      btn.disabled = true;
-      btn.textContent = 'Submitting...';
+      const progressWrap = document.getElementById('progress-wrap');
+      const progressBar = document.getElementById('progress-bar');
 
-      const body = {
-        title: document.getElementById('title').value.trim(),
-        artist_name: document.getElementById('artist_name').value.trim(),
-        artist_url: document.getElementById('artist_url').value.trim(),
-        description: document.getElementById('description').value.trim(),
-        tags: document.getElementById('tags').value.split(',').map(t => t.trim()).filter(Boolean),
-        file_url: document.getElementById('file_url').value.trim(),
-        thumbnail_url: document.getElementById('thumbnail_url').value.trim(),
-      };
+      btn.disabled = true;
+      btn.textContent = 'Uploading...';
+      progressWrap.style.display = 'block';
+      progressBar.style.width = '10%';
+
+      const formData = new FormData();
+      formData.append('title', document.getElementById('title').value.trim());
+      formData.append('artist_name', document.getElementById('artist_name').value.trim());
+      formData.append('artist_url', document.getElementById('artist_url').value.trim());
+      formData.append('description', document.getElementById('description').value.trim());
+      formData.append('tags_raw', document.getElementById('tags_raw').value.trim());
+      formData.append('print_file', document.getElementById('print_file').files[0]);
+      formData.append('thumbnail', document.getElementById('thumbnail').files[0]);
 
       try {
-        const res = await fetch('/api/submit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        });
+        // Simulate progress
+        let prog = 10;
+        const ticker = setInterval(() => {
+          prog = Math.min(prog + 10, 85);
+          progressBar.style.width = prog + '%';
+        }, 400);
+
+        const res = await fetch('/api/submit', { method: 'POST', body: formData });
+        clearInterval(ticker);
+        progressBar.style.width = '100%';
+
         const data = await res.json();
-        if (res.ok) {
+        if (res.ok && data.success) {
           status.innerHTML = `<div style="background:var(--yellow);border:3px solid var(--black);border-radius:8px;padding:1rem;margin-bottom:1.5rem;font-weight:800;">
             🎉 Design submitted! It'll show up after a quick review. Thanks!
           </div>`;
           e.target.reset();
+          document.getElementById('thumb-preview').innerHTML = '';
+          document.getElementById('print-name').textContent = '';
+          progressWrap.style.display = 'none';
         } else {
           throw new Error(data.error || 'Submission failed');
         }
       } catch (err) {
+        progressWrap.style.display = 'none';
         status.innerHTML = `<div style="background:#fdd;border:3px solid var(--red);border-radius:8px;padding:1rem;margin-bottom:1.5rem;font-weight:800;">
-          ❌ ${err.message}. Please try again.
+          ❌ ${err.message}
         </div>`;
       }
 
