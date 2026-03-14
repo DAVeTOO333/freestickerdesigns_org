@@ -6,7 +6,14 @@ exports.handler = async (event) => {
     'Content-Type': 'application/json',
   };
 
-  const client = new Client({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+  if (!process.env.DATABASE_URL) {
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'DATABASE_URL not set' }) };
+  }
+
+  const client = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+  });
 
   try {
     const params = event.queryStringParameters || {};
@@ -41,8 +48,8 @@ exports.handler = async (event) => {
 
     return { statusCode: 200, headers, body: JSON.stringify({ stickers, has_more }) };
   } catch (err) {
-    console.error('Stickers error:', err);
-    return { statusCode: 500, headers, body: JSON.stringify({ error: 'Failed to load stickers' }) };
+    console.error('Stickers error:', err.message);
+    return { statusCode: 500, headers, body: JSON.stringify({ error: err.message }) };
   } finally {
     await client.end().catch(() => {});
   }

@@ -15,7 +15,14 @@ exports.handler = async (event) => {
     return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
   }
 
-  const client = new Client({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+  if (!process.env.DATABASE_URL) {
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'DATABASE_URL not set' }) };
+  }
+
+  const client = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+  });
 
   try {
     const body = JSON.parse(event.body);
@@ -46,8 +53,8 @@ exports.handler = async (event) => {
 
     return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
   } catch (err) {
-    console.error('Submit error:', err);
-    return { statusCode: 500, headers, body: JSON.stringify({ error: 'Submission failed. Please try again.' }) };
+    console.error('Submit error:', err.message);
+    return { statusCode: 500, headers, body: JSON.stringify({ error: err.message }) };
   } finally {
     await client.end().catch(() => {});
   }

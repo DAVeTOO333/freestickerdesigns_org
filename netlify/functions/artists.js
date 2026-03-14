@@ -6,7 +6,14 @@ exports.handler = async (event) => {
     'Content-Type': 'application/json',
   };
 
-  const client = new Client({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+  if (!process.env.DATABASE_URL) {
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'DATABASE_URL not set' }) };
+  }
+
+  const client = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+  });
 
   try {
     await client.connect();
@@ -18,8 +25,8 @@ exports.handler = async (event) => {
 
     return { statusCode: 200, headers, body: JSON.stringify({ artists: result.rows }) };
   } catch (err) {
-    console.error('Artists error:', err);
-    return { statusCode: 500, headers, body: JSON.stringify({ error: 'Failed to load artists' }) };
+    console.error('Artists error:', err.message);
+    return { statusCode: 500, headers, body: JSON.stringify({ error: err.message }) };
   } finally {
     await client.end().catch(() => {});
   }
