@@ -5,7 +5,12 @@ exports.handler = async (event) => {
   if (!key) return { statusCode: 400, body: 'Missing key' };
 
   try {
-    const store = getStore('sticker-files');
+    const store = getStore({
+      name: 'sticker-files',
+      siteID: process.env.SITE_ID,
+      token: process.env.NETLIFY_TOKEN,
+    });
+
     const { data, metadata } = await store.getWithMetadata(key, { type: 'arrayBuffer' });
     if (!data) return { statusCode: 404, body: 'Not found' };
 
@@ -25,6 +30,6 @@ exports.handler = async (event) => {
     };
   } catch (err) {
     console.error('File serve error:', err.message);
-    return { statusCode: 500, body: 'Error serving file' };
+    return { statusCode: 500, body: err.message };
   }
 };

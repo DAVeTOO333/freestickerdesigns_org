@@ -3,13 +3,19 @@ const { getStore } = require('@netlify/blobs');
 const Busboy = require('busboy');
 const { randomUUID } = require('crypto');
 
+function getBlobStore() {
+  return getStore({
+    name: 'sticker-files',
+    siteID: process.env.SITE_ID,
+    token: process.env.NETLIFY_TOKEN,
+  });
+}
+
 function parseMultipart(event) {
   return new Promise((resolve, reject) => {
     const fields = {};
     const files = {};
-    const bb = Busboy({
-      headers: { 'content-type': event.headers['content-type'] }
-    });
+    const bb = Busboy({ headers: { 'content-type': event.headers['content-type'] } });
     bb.on('field', (name, val) => { fields[name] = val; });
     bb.on('file', (name, stream, info) => {
       const chunks = [];
@@ -50,12 +56,16 @@ exports.handler = async (event) => {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'Both a print file and thumbnail are required' }) };
     }
 
-    const store = getStore('sticker-files');
+    const store = getBlobStore();
     const printKey = `print/${randomUUID()}`;
     const thumbKey = `thumb/${randomUUID()}`;
 
-    await store.set(printKey, files.print_file.buffer, { metadata: { mimetype: files.print_file.mimetype, filename: files.print_file.filename } });
-    await store.set(thumbKey, files.thumbnail.buffer, { metadata: { mimetype: files.thumbnail.mimetype } });
+    await store.set(printKey, files.print_file.buffer, {
+      metadata: { mimetype: files.print_file.mimetype, filename: files.print_file.filename }
+    });
+    await store.set(thumbKey, files.thumbnail.buffer, {
+      metadata: { mimetype: files.thumbnail.mimetype }
+    });
 
     const tags = (tags_raw || '').split(',').map(t => t.trim()).filter(Boolean);
     const download_url = `/api/file?key=${encodeURIComponent(printKey)}`;
