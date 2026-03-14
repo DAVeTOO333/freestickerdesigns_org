@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Submit a Design — FreeStickerDesigns.org</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <header>
+    <a class="logo" href="index.html">FREE<span>STICKER</span>DESIGNS</a>
+    <nav>
+      <a href="browse.html">Browse</a>
+      <a href="artists.html">Artists</a>
+      <a href="print.html">Print</a>
+      <a href="submit.html" class="active">Submit Yours</a>
+      <a href="about.html">About</a>
+    </nav>
+  </header>
+
+  <div class="section">
+    <div class="section-title">Submit a Design</div>
+    <p class="section-subtitle">Got something good? Share it with the world for free.</p>
+
+    <div class="form-card">
+      <div id="form-status"></div>
+
+      <form id="submit-form">
+        <div class="form-group">
+          <label for="title">Design Title *</label>
+          <input type="text" id="title" name="title" required placeholder="What's it called?" />
+        </div>
+
+        <div class="form-group">
+          <label for="artist_name">Your Name / Handle *</label>
+          <input type="text" id="artist_name" name="artist_name" required placeholder="How should we credit you?" />
+        </div>
+
+        <div class="form-group">
+          <label for="artist_url">Your Website or Social (optional)</label>
+          <input type="url" id="artist_url" name="artist_url" placeholder="https://..." />
+        </div>
+
+        <div class="form-group">
+          <label for="description">Description (optional)</label>
+          <textarea id="description" name="description" placeholder="Tell us a little about this design..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="tags">Tags *</label>
+          <input type="text" id="tags" name="tags" required placeholder="humor, pop culture, animals..." />
+          <div class="form-note">Comma-separated. Helps people find your work.</div>
+        </div>
+
+        <div class="form-group">
+          <label for="file_url">File Link *</label>
+          <input type="url" id="file_url" name="file_url" required placeholder="Link to your PDF or PNG (Google Drive, Dropbox, etc.)" />
+          <div class="form-note">Share a public link to a print-ready PDF or high-res PNG. Files should be at least 300 DPI.</div>
+        </div>
+
+        <div class="form-group">
+          <label for="thumbnail_url">Thumbnail/Preview Link *</label>
+          <input type="url" id="thumbnail_url" name="thumbnail_url" required placeholder="Link to a preview image (PNG or JPG)" />
+          <div class="form-note">A square preview image works best. Minimum 400×400px.</div>
+        </div>
+
+        <div class="form-group">
+          <label style="display:flex; gap:0.75rem; align-items:flex-start; cursor:pointer;">
+            <input type="checkbox" id="agree" name="agree" required style="margin-top:3px; width:auto; box-shadow:none;" />
+            <span>I confirm this is my original work (or I have permission to share it), and I'm okay with it being available for free download. No hateful content. ✌️</span>
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn-yellow" style="width:100%; font-size:1.1rem; padding:1rem;">
+          Submit Design →
+        </button>
+      </form>
+    </div>
+
+    <div style="max-width:600px; margin: 2rem auto 0; font-size:0.9rem; color:#555; font-weight:600;">
+      <strong>Guidelines:</strong> Keep it cool. No hate speech, no harassment, no content that promotes violence. 
+      Designs go live after a quick review. Questions? Reach us at <a href="mailto:hello@freestickerdesigns.org">hello@freestickerdesigns.org</a>.
+    </div>
+  </div>
+
+  <footer>
+    <p>© 2026 FreeStickerDesigns.org — Free to download, free to print, free to share.</p>
+    <p style="margin-top:0.5rem; opacity:0.6;">No hate. No catch. Just stickers.</p>
+  </footer>
+
+  <script>
+    document.getElementById('submit-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const status = document.getElementById('form-status');
+      const btn = e.target.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      btn.textContent = 'Submitting...';
+
+      const body = {
+        title: document.getElementById('title').value.trim(),
+        artist_name: document.getElementById('artist_name').value.trim(),
+        artist_url: document.getElementById('artist_url').value.trim(),
+        description: document.getElementById('description').value.trim(),
+        tags: document.getElementById('tags').value.split(',').map(t => t.trim()).filter(Boolean),
+        file_url: document.getElementById('file_url').value.trim(),
+        thumbnail_url: document.getElementById('thumbnail_url').value.trim(),
+      };
+
+      try {
+        const res = await fetch('/api/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (res.ok) {
+          status.innerHTML = `<div style="background:var(--yellow);border:3px solid var(--black);border-radius:8px;padding:1rem;margin-bottom:1.5rem;font-weight:800;">
+            🎉 Design submitted! It'll show up after a quick review. Thanks!
+          </div>`;
+          e.target.reset();
+        } else {
+          throw new Error(data.error || 'Submission failed');
+        }
+      } catch (err) {
+        status.innerHTML = `<div style="background:#fdd;border:3px solid var(--red);border-radius:8px;padding:1rem;margin-bottom:1.5rem;font-weight:800;">
+          ❌ ${err.message}. Please try again.
+        </div>`;
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'Submit Design →';
+    });
+  </script>
+
+</body>
+</html>

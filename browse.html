@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Browse Designs — FreeStickerDesigns.org</title>
+  <meta name="description" content="Browse all free sticker designs. Filter by category, download and print." />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <header>
+    <a class="logo" href="index.html">FREE<span>STICKER</span>DESIGNS</a>
+    <nav>
+      <a href="browse.html" class="active">Browse</a>
+      <a href="artists.html">Artists</a>
+      <a href="print.html">Print</a>
+      <a href="submit.html">Submit Yours</a>
+      <a href="about.html">About</a>
+    </nav>
+  </header>
+
+  <div class="section">
+    <div class="section-title">All Designs</div>
+    <p class="section-subtitle">Free to download, free to print. Filter by vibe.</p>
+
+    <div class="filter-bar" id="filter-bar">
+      <button class="filter-btn active" data-tag="all">All</button>
+      <button class="filter-btn" data-tag="humor">Humor</button>
+      <button class="filter-btn" data-tag="pop culture">Pop Culture</button>
+      <button class="filter-btn" data-tag="art">Art</button>
+      <button class="filter-btn" data-tag="activist">Activist</button>
+      <button class="filter-btn" data-tag="spraymonsters">SPRAYMONSTERS</button>
+      <button class="filter-btn" data-tag="typography">Typography</button>
+      <button class="filter-btn" data-tag="animals">Animals</button>
+    </div>
+
+    <div id="sticker-grid" class="sticker-grid">
+      <div class="empty-state" style="grid-column: 1/-1;">
+        <div class="big-emoji">🖨️</div>
+        <p>No designs yet — be the first to submit!</p>
+        <br>
+        <a href="submit.html" class="btn btn-yellow">Submit a Design</a>
+      </div>
+    </div>
+
+    <div id="load-more-wrap" style="text-align:center; margin-top:2rem; display:none;">
+      <button id="load-more" class="btn btn-black">Load More</button>
+    </div>
+  </div>
+
+  <footer>
+    <p>© 2026 FreeStickerDesigns.org — Free to download, free to print, free to share.</p>
+    <p style="margin-top:0.5rem; opacity:0.6;">No hate. No catch. Just stickers.</p>
+  </footer>
+
+  <script>
+    let currentTag = 'all';
+    let offset = 0;
+    const limit = 12;
+
+    async function loadStickers(reset = false) {
+      if (reset) offset = 0;
+      try {
+        const tagParam = currentTag === 'all' ? '' : `&tag=${encodeURIComponent(currentTag)}`;
+        const res = await fetch(`/api/stickers?limit=${limit}&offset=${offset}${tagParam}`);
+        if (!res.ok) return;
+        const data = await res.json();
+
+        if (reset || offset === 0) {
+          if (!data.stickers || data.stickers.length === 0) {
+            document.getElementById('sticker-grid').innerHTML = `
+              <div class="empty-state" style="grid-column: 1/-1;">
+                <div class="big-emoji">🔍</div>
+                <p>No designs found. Try a different filter or submit one!</p>
+                <br><a href="submit.html" class="btn btn-yellow">Submit a Design</a>
+              </div>`;
+            document.getElementById('load-more-wrap').style.display = 'none';
+            return;
+          }
+          document.getElementById('sticker-grid').innerHTML = '';
+        }
+
+        renderStickers(data.stickers);
+        offset += data.stickers.length;
+
+        const loadMoreWrap = document.getElementById('load-more-wrap');
+        loadMoreWrap.style.display = data.has_more ? 'block' : 'none';
+      } catch (e) {
+        // keep empty state
+      }
+    }
+
+    function renderStickers(stickers) {
+      const grid = document.getElementById('sticker-grid');
+      stickers.forEach(s => {
+        const card = document.createElement('div');
+        card.className = 'sticker-card';
+        card.innerHTML = `
+          <div class="sticker-card-img">
+            <img src="${s.thumbnail_url || '/images/placeholder.png'}" alt="${s.title}" loading="lazy" />
+          </div>
+          <div class="sticker-card-body">
+            <div class="sticker-card-title">${s.title}</div>
+            <div class="sticker-card-artist">by ${s.artist_name || 'Anonymous'}</div>
+            <div class="sticker-card-tags">
+              ${(s.tags || []).slice(0,3).map(t => `<span class="tag">${t}</span>`).join('')}
+            </div>
+          </div>
+          <div class="sticker-card-footer">
+            <a href="${s.download_url}" class="btn btn-yellow" download>Download</a>
+            <a href="design.html?id=${s.id}" class="btn btn-white">View</a>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    // Filter buttons
+    document.getElementById('filter-bar').addEventListener('click', e => {
+      const btn = e.target.closest('.filter-btn');
+      if (!btn) return;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentTag = btn.dataset.tag;
+      loadStickers(true);
+    });
+
+    document.getElementById('load-more').addEventListener('click', () => loadStickers());
+
+    loadStickers();
+  </script>
+
+</body>
+</html>

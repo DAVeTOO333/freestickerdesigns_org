@@ -1,0 +1,21 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/api/stickers"
+  to = "/.netlify/functions/stickers"
+  status = 200
+
+[[redirects]]
+  from = "/api/submit"
+  to = "/.netlify/functions/submit"
+  status = 200
+
+[[redirects]]
+  from = "/api/artists"
+  to = "/.netlify/functions/artists"
+  status = 200
+
+[functions]
+  node_bundler = "esbuild"

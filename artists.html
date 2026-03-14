@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Artists — FreeStickerDesigns.org</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .artist-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 1.5rem;
+    }
+    .artist-card {
+      background: var(--white);
+      border: var(--border-thick);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      padding: 1.5rem;
+      text-align: center;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .artist-card:hover {
+      transform: translate(-3px, -3px);
+      box-shadow: 9px 9px 0 var(--black);
+    }
+    .artist-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: var(--border-thick);
+      background: var(--yellow);
+      margin: 0 auto 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Bangers', cursive;
+      font-size: 2rem;
+      overflow: hidden;
+    }
+    .artist-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .artist-name {
+      font-family: 'Bangers', cursive;
+      font-size: 1.4rem;
+      letter-spacing: 1px;
+      margin-bottom: 0.25rem;
+    }
+    .artist-count {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #555;
+      margin-bottom: 0.75rem;
+    }
+    .artist-bio {
+      font-size: 0.9rem;
+      line-height: 1.5;
+      color: #444;
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a class="logo" href="index.html">FREE<span>STICKER</span>DESIGNS</a>
+    <nav>
+      <a href="browse.html">Browse</a>
+      <a href="artists.html" class="active">Artists</a>
+      <a href="print.html">Print</a>
+      <a href="submit.html">Submit Yours</a>
+      <a href="about.html">About</a>
+    </nav>
+  </header>
+
+  <div class="section">
+    <div class="section-title">The Artists</div>
+    <p class="section-subtitle">The humans (and monsters) behind the designs.</p>
+
+    <div id="artist-grid" class="artist-grid">
+      <div class="empty-state" style="grid-column: 1/-1;">
+        <div class="big-emoji">🎨</div>
+        <p>No artists yet. Submit a design and be the first!</p>
+        <br>
+        <a href="submit.html" class="btn btn-yellow">Submit a Design</a>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>© 2026 FreeStickerDesigns.org — Free to download, free to print, free to share.</p>
+    <p style="margin-top:0.5rem; opacity:0.6;">No hate. No catch. Just stickers.</p>
+  </footer>
+
+  <script>
+    async function loadArtists() {
+      try {
+        const res = await fetch('/api/artists');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data.artists || data.artists.length === 0) return;
+
+        const grid = document.getElementById('artist-grid');
+        grid.innerHTML = data.artists.map(a => `
+          <div class="artist-card">
+            <div class="artist-avatar">
+              ${a.avatar_url ? `<img src="${a.avatar_url}" alt="${a.name}" />` : a.name[0].toUpperCase()}
+            </div>
+            <div class="artist-name">${a.name}</div>
+            <div class="artist-count">${a.design_count} design${a.design_count !== 1 ? 's' : ''}</div>
+            ${a.bio ? `<div class="artist-bio">${a.bio}</div>` : ''}
+            <div style="display:flex; gap:0.5rem; justify-content:center; flex-wrap:wrap;">
+              <a href="browse.html?artist=${encodeURIComponent(a.name)}" class="btn btn-yellow" style="font-size:0.85rem; padding:0.5rem 1rem;">See Designs</a>
+              ${a.url ? `<a href="${a.url}" target="_blank" rel="noopener" class="btn btn-white" style="font-size:0.85rem; padding:0.5rem 1rem;">Website ↗</a>` : ''}
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        // keep empty state
+      }
+    }
+
+    loadArtists();
+  </script>
+
+</body>
+</html>
