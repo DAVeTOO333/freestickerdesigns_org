@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "description": "FreeStickerDesigns.org",
   "dependencies": {
-    "pg": "^8.11.0"
+    "pg": "^8.11.0",
+    "@netlify/blobs": "^8.1.0",
+    "busboy": "^1.6.0"
   }
 }
