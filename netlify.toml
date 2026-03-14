@@ -18,5 +18,10 @@
   to = "/.netlify/functions/artists"
   status = 200
 
+[[redirects]]
+  from = "/api/debug"
+  to = "/.netlify/functions/debug"
+  status = 200
+
 [functions]
   node_bundler = "esbuild"
