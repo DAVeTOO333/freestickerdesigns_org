@@ -10,7 +10,7 @@
 <body>
 
   <header>
-    <a class="logo" href="index.html">FREE<span>STICKER</span>DESIGNS</a>
+    <a class="logo" href="index.html">FREESTICKERDESIGNS</a>
     <nav>
       <a href="browse.html" class="active">Browse</a>
       <a href="artists.html">Artists</a>
@@ -21,8 +21,8 @@
   </header>
 
   <div class="section">
-    <div class="section-title">All Designs</div>
-    <p class="section-subtitle">Free to download, free to print. Filter by vibe.</p>
+    <div class="section-title" id="page-title">All Designs</div>
+    <p class="section-subtitle" id="page-subtitle">Free to download, free to print. Filter by vibe.</p>
 
     <div class="filter-bar" id="filter-bar">
       <button class="filter-btn active" data-tag="all">All</button>
@@ -55,15 +55,31 @@
   </footer>
 
   <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const artistFilter = urlParams.get('artist') || null;
+
     let currentTag = 'all';
     let offset = 0;
     const limit = 12;
 
+    // If filtering by artist, update the page header and hide tag filters
+    if (artistFilter) {
+      document.getElementById('page-title').textContent = `Designs by ${artistFilter}`;
+      document.getElementById('page-subtitle').textContent = 'All designs from this artist.';
+      document.getElementById('filter-bar').style.display = 'none';
+    }
+
     async function loadStickers(reset = false) {
       if (reset) offset = 0;
       try {
-        const tagParam = currentTag === 'all' ? '' : `&tag=${encodeURIComponent(currentTag)}`;
-        const res = await fetch(`/api/stickers?limit=${limit}&offset=${offset}${tagParam}`);
+        let query = `/api/stickers?limit=${limit}&offset=${offset}`;
+        if (artistFilter) {
+          query += `&artist=${encodeURIComponent(artistFilter)}`;
+        } else if (currentTag !== 'all') {
+          query += `&tag=${encodeURIComponent(currentTag)}`;
+        }
+
+        const res = await fetch(query);
         if (!res.ok) return;
         const data = await res.json();
 
@@ -83,9 +99,7 @@
 
         renderStickers(data.stickers);
         offset += data.stickers.length;
-
-        const loadMoreWrap = document.getElementById('load-more-wrap');
-        loadMoreWrap.style.display = data.has_more ? 'block' : 'none';
+        document.getElementById('load-more-wrap').style.display = data.has_more ? 'block' : 'none';
       } catch (e) {
         // keep empty state
       }
@@ -116,7 +130,7 @@
       });
     }
 
-    // Filter buttons
+    // Filter buttons (only active when not filtering by artist)
     document.getElementById('filter-bar').addEventListener('click', e => {
       const btn = e.target.closest('.filter-btn');
       if (!btn) return;
