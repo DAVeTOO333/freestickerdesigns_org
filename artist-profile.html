@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Artist Profile — FreeStickerDesigns.org</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .profile-card { max-width: 560px; margin: 0 auto; }
+    .avatar-preview {
+      width: 120px; height: 120px; border-radius: 50%;
+      border: var(--border-thick); background: var(--yellow);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Bangers', cursive; font-size: 3rem;
+      overflow: hidden; margin: 0 auto 1.5rem;
+    }
+    .avatar-preview img { width: 100%; height: 100%; object-fit: cover; }
+    .file-upload-area {
+      border: 3px dashed var(--black); border-radius: var(--radius);
+      padding: 1.5rem; text-align: center; cursor: pointer;
+      background: #fafafa; position: relative; transition: background 0.15s;
+    }
+    .file-upload-area:hover { background: #fff9d6; }
+    .file-upload-area input[type=file] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; box-shadow: none;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a class="logo" href="index.html">FREE<span>STICKER</span>DESIGNS</a>
+    <nav>
+      <a href="browse.html">Browse</a>
+      <a href="artists.html" >Artists</a>
+      <a href="print.html">Print</a>
+      <a href="submit.html">Submit Yours</a>
+      <a href="about.html">About</a>
+    </nav>
+  </header>
+
+  <div class="section">
+    <div class="section-title">Artist Profile</div>
+    <p class="section-subtitle">Upload an avatar and bio to personalize your artist card.</p>
+
+    <div class="form-card profile-card">
+      <div id="form-status"></div>
+
+      <div class="avatar-preview" id="avatar-preview">
+        <span id="avatar-initial">?</span>
+      </div>
+
+      <form id="profile-form">
+        <div class="form-group">
+          <label for="artist_name">Your Name / Handle *</label>
+          <input type="text" id="artist_name" name="artist_name" required
+            placeholder="Must match what you used when submitting designs" />
+          <div class="form-note">Must exactly match the name you used on your submitted designs.</div>
+        </div>
+
+        <div class="form-group">
+          <label>Avatar Image <span style="font-weight:400;font-size:0.85rem;">(PNG, JPG — square preferred)</span></label>
+          <div class="file-upload-area">
+            <input type="file" id="avatar" name="avatar" accept=".png,.jpg,.jpeg,.gif,.webp" />
+            <div style="font-size:1.5rem;">🖼️</div>
+            <div style="font-weight:800; font-size:0.95rem;">Click to upload avatar</div>
+            <div style="font-size:0.8rem; color:#777; margin-top:0.25rem;">Square image works best</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="bio">Bio <span style="font-weight:400;font-size:0.85rem;">(optional)</span></label>
+          <textarea id="bio" name="bio" placeholder="Tell people a little about yourself and your work..."></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-yellow" style="width:100%; font-size:1.1rem; padding:1rem;">
+          Save Profile →
+        </button>
+      </form>
+
+      <p style="margin-top:1.5rem; font-size:0.85rem; font-weight:600; color:#777; text-align:center;">
+        Your profile will show up on the <a href="artists.html" style="color:var(--blue);">Artists page</a> once you have an approved design.
+      </p>
+    </div>
+  </div>
+
+  <footer>
+    <p>© 2026 FreeStickerDesigns.org — Free to download, free to print, free to share.</p>
+    <p style="margin-top:0.5rem; opacity:0.6;">No hate. No catch. Just stickers.</p>
+  </footer>
+
+  <script>
+    // Live avatar preview
+    document.getElementById('avatar').addEventListener('change', function() {
+      if (this.files[0]) {
+        const url = URL.createObjectURL(this.files[0]);
+        document.getElementById('avatar-preview').innerHTML = `<img src="${url}" alt="Avatar preview" />`;
+      }
+    });
+
+    // Update avatar initial when name typed
+    document.getElementById('artist_name').addEventListener('input', function() {
+      const initial = document.getElementById('avatar-initial');
+      if (initial) initial.textContent = this.value.trim()[0]?.toUpperCase() || '?';
+    });
+
+    document.getElementById('profile-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const status = document.getElementById('form-status');
+      const btn = e.target.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+
+      const formData = new FormData();
+      formData.append('artist_name', document.getElementById('artist_name').value.trim());
+      formData.append('bio', document.getElementById('bio').value.trim());
+      const avatarFile = document.getElementById('avatar').files[0];
+      if (avatarFile) formData.append('avatar', avatarFile);
+
+      try {
+        const res = await fetch('/api/artist-profile', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          status.innerHTML = `<div style="background:var(--yellow);border:3px solid var(--black);border-radius:8px;padding:1rem;margin-bottom:1.5rem;font-weight:800;">
+            🎉 Profile saved! It'll show up on the Artists page.
+          </div>`;
+        } else {
+          throw new Error(data.error || 'Save failed');
+        }
+      } catch (err) {
+        status.innerHTML = `<div style="background:#fdd;border:3px solid var(--red);border-radius:8px;padding:1rem;margin-bottom:1.5rem;font-weight:800;">
+          ❌ ${err.message}
+        </div>`;
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'Save Profile →';
+    });
+  </script>
+
+</body>
+</html>

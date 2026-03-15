@@ -25,42 +25,17 @@
       box-shadow: 9px 9px 0 var(--black);
     }
     .artist-avatar {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      border: var(--border-thick);
-      background: var(--yellow);
+      width: 80px; height: 80px; border-radius: 50%;
+      border: var(--border-thick); background: var(--yellow);
       margin: 0 auto 1rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Bangers', cursive;
-      font-size: 2rem;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Bangers', cursive; font-size: 2rem;
       overflow: hidden;
     }
-    .artist-avatar img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    .artist-name {
-      font-family: 'Bangers', cursive;
-      font-size: 1.4rem;
-      letter-spacing: 1px;
-      margin-bottom: 0.25rem;
-    }
-    .artist-count {
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: #555;
-      margin-bottom: 0.75rem;
-    }
-    .artist-bio {
-      font-size: 0.9rem;
-      line-height: 1.5;
-      color: #444;
-      margin-bottom: 1rem;
-    }
+    .artist-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .artist-name { font-family: 'Bangers', cursive; font-size: 1.4rem; letter-spacing: 1px; margin-bottom: 0.25rem; }
+    .artist-count { font-size: 0.85rem; font-weight: 700; color: #555; margin-bottom: 0.75rem; }
+    .artist-bio { font-size: 0.9rem; line-height: 1.5; color: #444; margin-bottom: 1rem; }
   </style>
 </head>
 <body>
@@ -78,7 +53,7 @@
 
   <div class="section">
     <div class="section-title">The Artists</div>
-    <p class="section-subtitle">The humans (and monsters) behind the designs.</p>
+    <p class="section-subtitle">The humans (and monsters) behind the designs. <a href="artist-profile.html" style="color:var(--blue);">Update your profile →</a></p>
 
     <div id="artist-grid" class="artist-grid">
       <div class="empty-state" style="grid-column: 1/-1;">
@@ -107,10 +82,13 @@
         grid.innerHTML = data.artists.map(a => `
           <div class="artist-card">
             <div class="artist-avatar">
-              ${a.avatar_url ? `<img src="${a.avatar_url}" alt="${a.name}" />` : a.name[0].toUpperCase()}
+              ${a.avatar_url
+                ? `<img src="${a.avatar_url}" alt="${a.name}" onerror="this.parentElement.textContent='${a.name[0].toUpperCase()}'" />`
+                : a.name[0].toUpperCase()
+              }
             </div>
             <div class="artist-name">${a.name}</div>
-            <div class="artist-count">${a.design_count} design${a.design_count !== 1 ? 's' : ''}</div>
+            <div class="artist-count">${a.design_count} design${a.design_count != 1 ? 's' : ''}</div>
             ${a.bio ? `<div class="artist-bio">${a.bio}</div>` : ''}
             <div style="display:flex; gap:0.5rem; justify-content:center; flex-wrap:wrap;">
               <a href="browse.html?artist=${encodeURIComponent(a.name)}" class="btn btn-yellow" style="font-size:0.85rem; padding:0.5rem 1rem;">See Designs</a>
