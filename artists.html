@@ -6,36 +6,24 @@
   <title>Artists — FreeStickerDesigns.org</title>
   <link rel="stylesheet" href="css/style.css" />
   <style>
-    .artist-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-      gap: 1.5rem;
-    }
+    .artist-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1.5rem; }
     .artist-card {
-      background: var(--white);
-      border: var(--border-thick);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow-lg);
-      padding: 1.5rem;
-      text-align: center;
+      background: var(--white); border: var(--border-thick); border-radius: var(--radius);
+      box-shadow: var(--shadow-lg); padding: 1.5rem; text-align: center;
       transition: transform 0.15s, box-shadow 0.15s;
     }
-    .artist-card:hover {
-      transform: translate(-3px, -3px);
-      box-shadow: 9px 9px 0 var(--black);
-    }
+    .artist-card:hover { transform: translate(-3px, -3px); box-shadow: 9px 9px 0 var(--black); }
     .artist-avatar {
-      width: 80px; height: 80px; border-radius: 50%;
-      border: var(--border-thick); background: var(--yellow);
-      margin: 0 auto 1rem;
+      width: 80px; height: 80px; border-radius: 50%; border: var(--border-thick);
+      background: var(--yellow); margin: 0 auto 1rem;
       display: flex; align-items: center; justify-content: center;
-      font-family: 'Bangers', cursive; font-size: 2rem;
-      overflow: hidden;
+      font-family: 'Bangers', cursive; font-size: 2rem; overflow: hidden;
     }
     .artist-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .artist-name { font-family: 'Bangers', cursive; font-size: 1.4rem; letter-spacing: 1px; margin-bottom: 0.25rem; }
     .artist-count { font-size: 0.85rem; font-weight: 700; color: #555; margin-bottom: 0.75rem; }
     .artist-bio { font-size: 0.9rem; line-height: 1.5; color: #444; margin-bottom: 1rem; }
+    .artist-grid-wrap { min-height: 200px; }
   </style>
 </head>
 <body>
@@ -55,12 +43,12 @@
     <div class="section-title">The Artists</div>
     <p class="section-subtitle">The humans (and monsters) behind the designs. <a href="artist-profile.html" style="color:var(--blue);">Update your profile →</a></p>
 
-    <div id="artist-grid" class="artist-grid">
-      <div class="empty-state" style="grid-column: 1/-1;">
-        <div class="big-emoji">🎨</div>
-        <p>No artists yet. Submit a design and be the first!</p>
-        <br>
-        <a href="submit.html" class="btn btn-yellow">Submit a Design</a>
+    <div class="artist-grid-wrap">
+      <div id="artist-grid" class="artist-grid">
+        <div class="loading-state" style="grid-column:1/-1">
+          <div class="loading-dots"><span></span><span></span><span></span></div>
+          <p>Rounding up the artists...</p>
+        </div>
       </div>
     </div>
   </div>
@@ -74,11 +62,19 @@
     async function loadArtists() {
       try {
         const res = await fetch('/api/artists');
-        if (!res.ok) return;
+        if (!res.ok) throw new Error();
         const data = await res.json();
-        if (!data.artists || data.artists.length === 0) return;
-
         const grid = document.getElementById('artist-grid');
+
+        if (!data.artists || data.artists.length === 0) {
+          grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+            <div class="big-emoji">🎨</div>
+            <p>No artists yet. Submit a design and be the first!</p>
+            <br><a href="submit.html" class="btn btn-yellow">Submit a Design</a>
+          </div>`;
+          return;
+        }
+
         grid.innerHTML = data.artists.map(a => `
           <div class="artist-card">
             <div class="artist-avatar">
@@ -97,10 +93,9 @@
           </div>
         `).join('');
       } catch (e) {
-        // keep empty state
+        document.getElementById('artist-grid').innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="big-emoji">😬</div><p>Couldn't load artists. Try refreshing.</p></div>`;
       }
     }
-
     loadArtists();
   </script>
 

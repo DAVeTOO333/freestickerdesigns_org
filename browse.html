@@ -36,11 +36,9 @@
     </div>
 
     <div id="sticker-grid" class="sticker-grid">
-      <div class="empty-state" style="grid-column: 1/-1;">
-        <div class="big-emoji">🖨️</div>
-        <p>No designs yet — be the first to submit!</p>
-        <br>
-        <a href="submit.html" class="btn btn-yellow">Submit a Design</a>
+      <div class="loading-state">
+        <div class="loading-dots"><span></span><span></span><span></span></div>
+        <p>Fetching designs...</p>
       </div>
     </div>
 
@@ -57,12 +55,10 @@
   <script>
     const urlParams = new URLSearchParams(window.location.search);
     const artistFilter = urlParams.get('artist') || null;
-
     let currentTag = 'all';
     let offset = 0;
     const limit = 12;
 
-    // If filtering by artist, update the page header and hide tag filters
     if (artistFilter) {
       document.getElementById('page-title').textContent = `Designs by ${artistFilter}`;
       document.getElementById('page-subtitle').textContent = 'All designs from this artist.';
@@ -71,22 +67,22 @@
 
     async function loadStickers(reset = false) {
       if (reset) offset = 0;
+      if (reset) {
+        document.getElementById('sticker-grid').innerHTML = `<div class="loading-state"><div class="loading-dots"><span></span><span></span><span></span></div><p>Fetching designs...</p></div>`;
+      }
       try {
         let query = `/api/stickers?limit=${limit}&offset=${offset}`;
-        if (artistFilter) {
-          query += `&artist=${encodeURIComponent(artistFilter)}`;
-        } else if (currentTag !== 'all') {
-          query += `&tag=${encodeURIComponent(currentTag)}`;
-        }
+        if (artistFilter) query += `&artist=${encodeURIComponent(artistFilter)}`;
+        else if (currentTag !== 'all') query += `&tag=${encodeURIComponent(currentTag)}`;
 
         const res = await fetch(query);
-        if (!res.ok) return;
+        if (!res.ok) throw new Error();
         const data = await res.json();
 
         if (reset || offset === 0) {
           if (!data.stickers || data.stickers.length === 0) {
             document.getElementById('sticker-grid').innerHTML = `
-              <div class="empty-state" style="grid-column: 1/-1;">
+              <div class="empty-state" style="grid-column:1/-1">
                 <div class="big-emoji">🔍</div>
                 <p>No designs found. Try a different filter or submit one!</p>
                 <br><a href="submit.html" class="btn btn-yellow">Submit a Design</a>
@@ -101,7 +97,7 @@
         offset += data.stickers.length;
         document.getElementById('load-more-wrap').style.display = data.has_more ? 'block' : 'none';
       } catch (e) {
-        // keep empty state
+        document.getElementById('sticker-grid').innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="big-emoji">😬</div><p>Something went wrong loading designs. Refresh and try again.</p></div>`;
       }
     }
 
@@ -112,7 +108,7 @@
         card.className = 'sticker-card';
         card.innerHTML = `
           <div class="sticker-card-img">
-            <img src="${s.thumbnail_url || '/images/placeholder.png'}" alt="${s.title}" loading="lazy" />
+            <img src="${s.thumbnail_url}" alt="${s.title}" loading="lazy" />
           </div>
           <div class="sticker-card-body">
             <div class="sticker-card-title">${s.title}</div>
@@ -124,13 +120,11 @@
           <div class="sticker-card-footer">
             <a href="${s.download_url}" class="btn btn-yellow" download>Download</a>
             <a href="design.html?id=${s.id}" class="btn btn-white">View</a>
-          </div>
-        `;
+          </div>`;
         grid.appendChild(card);
       });
     }
 
-    // Filter buttons (only active when not filtering by artist)
     document.getElementById('filter-bar').addEventListener('click', e => {
       const btn = e.target.closest('.filter-btn');
       if (!btn) return;
@@ -141,7 +135,6 @@
     });
 
     document.getElementById('load-more').addEventListener('click', () => loadStickers());
-
     loadStickers();
   </script>
 
